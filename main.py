@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 import os
+from preprocess import Preprocess
 
 train_path = 'data/train.csv'
 test_path = 'data/test.csv'
@@ -21,6 +22,7 @@ def create_train_test_files():
 
 def main():
     create_train_test_files()
+    Preprocess(train_path)
     pass
 
 
