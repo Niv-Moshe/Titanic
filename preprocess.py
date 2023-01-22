@@ -1,37 +1,42 @@
-from typing import List, Set, Dict, Tuple, Union, DefaultDict
+from PassthroughTransformer import PassthroughTransformer
+from ColumnTransformerWithNames import ColumnTransformerWithNames
 import pandas as pd
 import numpy as np
 import re
-import string
-from sklearn import preprocessing
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.experimental import enable_iterative_imputer
+from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
+from sklearn.linear_model import LinearRegression
+from sklearn.experimental import enable_iterative_imputer  # IterativeImputer doesn't work without this import
 from sklearn.impute import IterativeImputer
-import warnings
 
+import warnings
 warnings.filterwarnings("ignore")
-from utils import get_feature_names
-from PassthroughTransformer import PassthroughTransformer
 
 
 class Preprocess:
-    def __init__(self, df_path: str, ):
+    def __init__(self, df: pd.DataFrame = None, df_path: str = None):
         """
         Will make a preprocessor sklearn ColumnTransformer for using in pipeline
         Args:
             df_path: path of titanic dataframe kind data with columns:
             ['PassengerId', 'Survived', 'Pclass', 'Name', 'Sex', 'Age',
             'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked']
+            df: if given otherwise read from path
         """
+        assert not all(v is None for v in [df_path, df]), "One argument should be not None"
         self.transformers = []
-        self.df_path = df_path
-        self.df = pd.read_csv(self.df_path)
+        if df_path is not None:
+            self.df = pd.read_csv(df_path)
+        else:
+            self.df = df
         self.features = list(self.df.columns)
         self.df = self.feature_engineering(self.df)
-        # pipeline = Pipeline(steps=[('preprocess', preprocess), ('model', model)])
-        self.make_transformers()
+        self.preprocessor = self.make_transformers()
+
+    def get_df(self):
+        return self.df
+
+    def get_preprocessor(self):
+        return self.preprocessor
 
     def drop_small_missing_data(self, df: pd.DataFrame) -> pd.DataFrame:
         nulls_percent = df.isna().sum() / len(df)
@@ -40,6 +45,14 @@ class Preprocess:
         for feature in small_missing_values_features:
             df = df[df[feature].notnull()]
         return df
+
+    @staticmethod
+    def feature_index_for_missing_data(df: pd.DataFrame, feature: str) -> None:
+        # a binary column indicating which rows have missing data for that feature
+        if feature == 'Survived':  # wouldn't happen (full data on independent variable)
+            return
+        missing_feature_name = f"{feature}NaN"
+        df[missing_feature_name] = np.where(df[feature].isnull(), 1, 0)
 
     @staticmethod
     def find_honorifics(name: str) -> str:
@@ -74,12 +87,6 @@ class Preprocess:
         df['GroupSize'] = df['Ticket'].map(ticket_counts_dict)
         pass
 
-    @staticmethod
-    def feature_index_for_missing_data(df: pd.DataFrame, feature: str) -> None:
-        # a binary column indicating which rows have missing data for that feature
-        missing_feature_name = f"{feature}NaN"
-        df[missing_feature_name] = np.where(df[feature].isnull(), 1, 0)
-
     def feature_engineering(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Function for making new features out of existing ones, and dealing with missing data partially
@@ -89,7 +96,7 @@ class Preprocess:
         Returns: a new dataframe with the new features and redundant features are dropped
         """
         # dropping rows where Embarked is missing (in train just 2 rows)
-        df = self.drop_small_missing_data(df)  # after that we are with column that have more than a few missing values
+        df = self.drop_small_missing_data(df)  # after that we are with columns that have more than a few missing values
 
         # Features for when we have missing data
         nulls_count = df.isna().sum()
@@ -107,43 +114,27 @@ class Preprocess:
         self.features = list(df.columns)
         return df
 
-    def make_transformers(self, ) -> None:
+    def make_transformers(self, ) -> ColumnTransformerWithNames:
         non_transformed = ['Pclass', 'SibSp', 'Parch', 'Fare', 'TicketGroup', 'GroupSize', 'Solo']
         nan_features = [feature for feature in self.features if 'NaN' in feature]  # , 'AgeNaN', 'CabinNaN'
         non_transformed += nan_features
 
         label_encoder_features = ["Sex"]
-        label_encoder_transformer = preprocessing.OrdinalEncoder()
+        label_encoder_transformer = OrdinalEncoder()
 
         one_hot_features = ["Embarked", "Honorifics", "CabinChar"]
-        one_hot_transformer = preprocessing.OneHotEncoder(handle_unknown="ignore")
+        one_hot_transformer = OneHotEncoder(handle_unknown="ignore")
 
         numeric_features = ["Age"]
         numeric_transformer = IterativeImputer(estimator=LinearRegression(), missing_values=np.nan, max_iter=10,
-                                               verbose=2, imputation_order='roman', random_state=0)
+                                               imputation_order='roman', random_state=0)
 
         transformers = [
             ("label_encoder", label_encoder_transformer, label_encoder_features),
             ("onehot", one_hot_transformer, one_hot_features),
             ("numeric", numeric_transformer, numeric_features),
+            # Survived column if exists will not make through the preprocessing (not in non_transformed)
             ('passthrough_transformer', PassthroughTransformer(), non_transformed),
         ]
         self.transformers += transformers
-
-        print(self.df)
-
-        preprocessor = ColumnTransformer(transformers=self.transformers)
-        preprocessor.fit(self.df)
-        # print(get_feature_names(preprocessor))
-        X = preprocessor.transform(self.df)
-        print(X.shape)
-        print(X)
-        # getting all features names included new ones
-        label_new_features = label_encoder_features
-        one_hot_new_features = list(preprocessor.transformers_[1][1].get_feature_names_out())
-        numeric_new_features = numeric_features
-        passthrough_features = list(preprocessor.transformers_[3][1].get_feature_names_out())
-
-        columns_preprocess = label_new_features + one_hot_new_features + numeric_new_features + passthrough_features
-        self.features = columns_preprocess
-
+        return ColumnTransformerWithNames(transformers=self.transformers)
