@@ -11,7 +11,7 @@ class PipelineWithNames(Pipeline):
         indices = X.index.values.tolist()
         new_cols = self.get_feature_names_out()
         X_mat = super().transform(X)
-        new_X = pd.DataFrame(X_mat, index=indices, columns=new_cols)
+        new_X = pd.DataFrame(X_mat, index=None, columns=new_cols)
         return new_X
 
     def fit_transform(self, X, y=None, **fit_params):
