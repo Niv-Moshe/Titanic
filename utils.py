@@ -1,6 +1,5 @@
 # import warnings
 import sklearn
-import pandas as pd
 import numpy as np
 
 
