@@ -54,21 +54,21 @@ def get_feature_names_out(column_transformer):
     feature_names = []
 
     # Allow transformers to be pipelines. Pipeline steps are named differently, so preprocessing is needed
-    if type(column_transformer) == sklearn.pipeline.Pipeline:
+    if isinstance(column_transformer, sklearn.pipeline.Pipeline):  # type(column_transformer) == sklearn.pipeline.Pipeline:
         l_transformers = [(name, trans, None, None) for step, name, trans in column_transformer._iter()]
     else:
         # For column transformers, follow the original method
         l_transformers = list(column_transformer._iter(fitted=True))
 
     for name, trans, columns, _ in l_transformers:
-        if type(trans) == sklearn.pipeline.Pipeline:
+        if isinstance(trans, sklearn.pipeline.Pipeline):  # type(trans) == sklearn.pipeline.Pipeline:
             # Recursive call on pipeline
             _names = get_feature_names_out(trans)
             # if pipeline has no transformer that returns names
             if len(_names) == 0:
                 _names = [f for f in columns]
             feature_names.extend(_names)
-        elif type(trans) == sklearn.compose.ColumnTransformer:
+        elif isinstance(trans, sklearn.compose.ColumnTransformer):  # type(trans) == sklearn.compose.ColumnTransformer:
             # Recursive call on ColumnTransformer
             _names = get_feature_names_out(trans)
             # if ColumnTransformer has no transformer that returns names
