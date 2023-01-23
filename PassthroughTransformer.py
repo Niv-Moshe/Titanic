@@ -2,7 +2,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
 
 
-class PassthroughTransformer(BaseEstimator):
+class PassthroughTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         # y to support API
         self.cols = X.columns
