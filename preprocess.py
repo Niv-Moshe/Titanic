@@ -10,7 +10,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.experimental import enable_iterative_imputer  # IterativeImputer doesn't work without this import
 from sklearn.impute import IterativeImputer
 from feature_engine.selection import DropFeatures
-from typing import List
+from typing import List, Tuple
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -47,7 +47,7 @@ def find_honorifics(name: str) -> str:
     return honorific
 
 
-def honorifics_feature_from_name(df: pd.DataFrame, y=None) -> pd.DataFrame:
+def honorifics_feature_from_name(df: pd.DataFrame) -> pd.DataFrame:
     df['Honorifics'] = df['Name'].apply(lambda name: find_honorifics(name))
     return df
 
@@ -73,6 +73,22 @@ def TicketGroup_GroupSize_features_from_ticket(df: pd.DataFrame) -> pd.DataFrame
     return df
 
 
+def label_encoding_transformer(label_encoder_features):
+    label_encoder_transformer = OrdinalEncoder()
+    return "label_encoder", label_encoder_transformer, label_encoder_features
+
+
+def one_hot_encoding_transformer(one_hot_features):
+    one_hot_transformer = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+    return "onehot", one_hot_transformer, one_hot_features
+
+
+def numeric_imputing_transformer(numeric_features):
+    numeric_transformer = IterativeImputer(estimator=LinearRegression(), missing_values=np.nan, max_iter=10,
+                                           imputation_order='roman', random_state=0)
+    return "numeric", numeric_transformer, numeric_features
+
+
 class Preprocess:
     def __init__(self, df: pd.DataFrame = None, df_path: str = None):
         """
@@ -84,18 +100,15 @@ class Preprocess:
             df: if given otherwise read from path
         """
         assert not all(v is None for v in [df_path, df]), "One argument should be not None"
-        self.transformers = []
         if df_path is not None:
             self.df = pd.read_csv(df_path)
         else:
             self.df = df
         self.features = list(self.df.columns)
-        self.pipeline = Pipeline(steps=[('drop_PassengerId_Survived', DropFeatures(['PassengerId', 'Survived']))],
-                                 verbose=True)
-        self.df = self.feature_engineering(self.df)
-        self.make_transformers()
-        self.pipeline.steps.append(['fix_names_after_preprocess', FixNamesTransformer()])
-        self.pipeline.set_output(transform="pandas")
+        # creating an empty pipeline
+        self.pipeline = Pipeline(steps=[], verbose=True)
+        # updating the pipeline
+        self.make_pipeline()
 
     def get_df(self):
         return self.df
@@ -103,13 +116,13 @@ class Preprocess:
     def get_pipeline(self):
         return self.pipeline
 
-    def feature_engineering(self, df: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, ColumnTransformer]:
         """
         Function for making new features out of existing ones, and dealing with missing data partially
         Args:
             df: dataframe to process, will be with columns as specified in titanic
 
-        Returns: a new dataframe with the new features and redundant features are dropped
+        Returns: a new dataframe after drop_small_missing_data
         """
         nulls_count = df.isna().sum()
         features_with_missingness = [feature for feature in self.features if nulls_count[feature] >= 1]
@@ -117,11 +130,7 @@ class Preprocess:
         df = drop_small_missing_data(df, features_with_missingness)
 
         feature_engineering_transformer = ColumnTransformer(remainder='passthrough', transformers=[
-            # ('drop_small_missing_data', FunctionTransformer(self.drop_small_missing_data,
-            #                                                 kw_args={'features': features_with_missingness},
-            #                                                 validate=False),
-            #  features_with_missingness),
-            ('honorifics_feature_from_name', FunctionTransformer(func=honorifics_feature_from_name, validate=False),
+            ('honorifics_feature_from_name', FunctionTransformer(honorifics_feature_from_name, validate=False),
              ['Name']),
             ('solo_feature_from_parch_sibsp', FunctionTransformer(solo_feature_from_parch_sibsp, validate=False),
              ['Parch', 'SibSp']),
@@ -135,6 +144,18 @@ class Preprocess:
                                                                    validate=False),
              features_with_missingness),
         ])
+        return df, feature_engineering_transformer
+
+    def make_pipeline(self):
+        """
+            Making pipeline steps for feature engineering and preprocessing data
+            Returns: updates the self.pipeline object
+        """
+        # dropping PassengerId which is an index column and target variable Survived
+        self.pipeline.steps.append(['drop_PassengerId_Survived', DropFeatures(['PassengerId', 'Survived'])])
+
+        # performing feature engineering - creating new features
+        self.df, feature_engineering_transformer = self.feature_engineering(self.df)
         # self.pipeline.steps.append(['drop_small_missing_data', DropSmallMissingData()])
         self.pipeline.steps.append(['feature_engineering', feature_engineering_transformer])
         self.pipeline.steps.append(['fix_names_after_feature_engineering', FixNamesTransformer()])
@@ -143,28 +164,13 @@ class Preprocess:
                                                   'Ticket',
                                                   'Cabin',  # drop two Cabin columns left after feature_engineering
                                                   ])])
-        return df
 
-    def make_transformers(self, ) -> None:
-        non_transformed = ['Pclass', 'SibSp', 'Parch', 'Fare', 'TicketGroup', 'GroupSize', 'Solo']
-        nan_features = [feature for feature in self.features if 'NaN' in feature]  # , 'AgeNaN', 'CabinNaN'
-        non_transformed += nan_features
-
-        label_encoder_features = ["Sex"]
-        label_encoder_transformer = OrdinalEncoder()
-
-        one_hot_features = ["Embarked", "Honorifics", "CabinChar"]
-        one_hot_transformer = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
-
-        numeric_features = ["Age"]
-        numeric_transformer = IterativeImputer(estimator=LinearRegression(), missing_values=np.nan, max_iter=10,
-                                               imputation_order='roman', random_state=0)
-
-        transformers = [
-            ("label_encoder", label_encoder_transformer, label_encoder_features),
-            ("onehot", one_hot_transformer, one_hot_features),
-            ("numeric", numeric_transformer, numeric_features),
-        ]
-        self.transformers += transformers
-        preprocessor = ColumnTransformer(transformers=self.transformers, remainder='passthrough')
-        self.pipeline.steps.append(['preprocess', preprocessor])
+        # preprocessing the data: label encoding, one hot encoding and imputing
+        transformers = [label_encoding_transformer(['Sex']),
+                        one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"]),
+                        numeric_imputing_transformer(["Age"])
+                        ]
+        self.pipeline.steps.append(['preprocess',
+                                    ColumnTransformer(transformers=transformers, remainder='passthrough')])
+        self.pipeline.steps.append(['fix_names_after_preprocess', FixNamesTransformer()])
+        self.pipeline.set_output(transform="pandas")
