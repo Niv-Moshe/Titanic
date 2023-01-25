@@ -12,6 +12,10 @@ class PassthroughTransformer(BaseEstimator, TransformerMixin):
         self.cols = X.columns
         return X.values
 
+    def fit_transform(self, X, y=None, **fit_params):
+        self.fit(X, y)
+        return self.transform(X, y)
+
     def get_feature_names(self, input_features=None):
         # to support get_feature_names (get_feature_names is deprecated in 1.0 and
         # will be removed in 1.2. Please use get_feature_names_out instead)
