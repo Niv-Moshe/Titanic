@@ -106,15 +106,15 @@ class Preprocess:
             self.df = df
         self.features = list(self.df.columns)
         # creating an empty pipeline
-        self.pipeline = Pipeline(steps=[], verbose=True)
+        self.preprocess_pipeline = Pipeline(steps=[], verbose=True)
         # updating the pipeline
-        self.make_pipeline()
+        self.make_preprocess_pipeline()
 
     def get_df(self):
         return self.df
 
-    def get_pipeline(self):
-        return self.pipeline
+    def get_preprocess_pipeline(self):
+        return self.preprocess_pipeline
 
     def feature_engineering(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, ColumnTransformer]:
         """
@@ -146,21 +146,21 @@ class Preprocess:
         ])
         return df, feature_engineering_transformer
 
-    def make_pipeline(self):
+    def make_preprocess_pipeline(self):
         """
             Making pipeline steps for feature engineering and preprocessing data
             Returns: updates the self.pipeline object
         """
         # dropping PassengerId which is an index column and target variable Survived
-        self.pipeline.steps.append(['drop_PassengerId_Survived', DropFeatures(['PassengerId', 'Survived'])])
+        self.preprocess_pipeline.steps.append(['drop_PassengerId_Survived', DropFeatures(['PassengerId', 'Survived'])])
 
         # performing feature engineering - creating new features
         self.df, feature_engineering_transformer = self.feature_engineering(self.df)
         # self.pipeline.steps.append(['drop_small_missing_data', DropSmallMissingData()])
-        self.pipeline.steps.append(['feature_engineering', feature_engineering_transformer])
-        self.pipeline.steps.append(['fix_names_after_feature_engineering', FixNamesTransformer()])
-        self.pipeline.steps.append(['drop_unnecessary_columns',
-                                    DropFeatures(['Name',
+        self.preprocess_pipeline.steps.append(['feature_engineering', feature_engineering_transformer])
+        self.preprocess_pipeline.steps.append(['fix_names_after_feature_engineering', FixNamesTransformer()])
+        self.preprocess_pipeline.steps.append(['drop_unnecessary_columns',
+                                               DropFeatures(['Name',
                                                   'Ticket',
                                                   'Cabin',  # drop two Cabin columns left after feature_engineering
                                                   ])])
@@ -170,7 +170,7 @@ class Preprocess:
                         one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"]),
                         numeric_imputing_transformer(["Age"])
                         ]
-        self.pipeline.steps.append(['preprocess',
-                                    ColumnTransformer(transformers=transformers, remainder='passthrough')])
-        self.pipeline.steps.append(['fix_names_after_preprocess', FixNamesTransformer()])
-        self.pipeline.set_output(transform="pandas")
+        self.preprocess_pipeline.steps.append(['preprocess',
+                                               ColumnTransformer(transformers=transformers, remainder='passthrough')])
+        self.preprocess_pipeline.steps.append(['fix_names_after_preprocess', FixNamesTransformer()])
+        self.preprocess_pipeline.set_output(transform="pandas")
