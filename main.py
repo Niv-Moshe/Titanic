@@ -3,10 +3,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import os
 from preprocess import Preprocess
-from model import ModelTitanic
-
-train_path = 'data/train.csv'
-test_path = 'data/test.csv'
+from model import ModelTitanic, train_path, test_path
 
 
 def create_train_test_files():
@@ -15,8 +12,8 @@ def create_train_test_files():
         # create train test split
         titanic = pd.read_csv('data/titanic.csv')
         train, test = train_test_split(titanic, test_size=0.2, random_state=42)
-        train.to_csv('data/train.csv', index=False)
-        test.to_csv('data/test.csv', index=False)
+        train.to_csv(train_path, index=False)
+        test.to_csv(train_path, index=False)
     else:
         print('Train and Test files already exist')
 
@@ -25,6 +22,7 @@ def main():
     create_train_test_files()
     # Preprocess(df_path=train_path)
     model = ModelTitanic(df_train_path=train_path)
+    model.train()
     pass
 
 
