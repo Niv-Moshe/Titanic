@@ -90,7 +90,8 @@ def numeric_imputing_transformer(numeric_features):
 
 
 class Preprocess:
-    def __init__(self, df: pd.DataFrame = None, df_path: str = None):
+    def __init__(self, df: pd.DataFrame = None, df_path: str = None, label_encode: bool = True,
+                 one_hot_encode: bool = True, ):
         """
         Will make a preprocessor sklearn ColumnTransformer for using in pipeline
         Args:
@@ -108,7 +109,7 @@ class Preprocess:
         # creating an empty pipeline
         self.preprocess_pipeline = Pipeline(steps=[], verbose=True)
         # updating the pipeline
-        self.make_preprocess_pipeline()
+        self.make_preprocess_pipeline(label_encode=label_encode, one_hot_encode=one_hot_encode, )
 
     def get_df(self):
         return self.df
@@ -146,7 +147,7 @@ class Preprocess:
         ])
         return df, feature_engineering_transformer
 
-    def make_preprocess_pipeline(self):
+    def make_preprocess_pipeline(self, label_encode: bool = True, one_hot_encode: bool = True, ):
         """
             Making pipeline steps for feature engineering and preprocessing data
             Returns: updates the self.pipeline object
@@ -166,10 +167,13 @@ class Preprocess:
                                                   ])])
 
         # preprocessing the data: label encoding, one hot encoding and imputing
-        transformers = [label_encoding_transformer(['Sex']),
-                        one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"]),
-                        numeric_imputing_transformer(["Age"])
-                        ]
+        transformers = []
+        if label_encode:
+            transformers.append(label_encoding_transformer(['Sex']))
+        if one_hot_encode:
+            transformers.append(one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"]))
+
+        transformers.append(numeric_imputing_transformer(["Age"]))
         self.preprocess_pipeline.steps.append(['preprocess',
                                                ColumnTransformer(transformers=transformers, remainder='passthrough')])
         self.preprocess_pipeline.steps.append(['fix_names_after_preprocess', FixNamesTransformer()])

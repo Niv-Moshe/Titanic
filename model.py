@@ -1,4 +1,4 @@
-from preprocess import Preprocess
+# general
 import pandas as pd
 import numpy as np
 import os
@@ -6,6 +6,9 @@ import joblib
 import time
 from datetime import datetime
 from tqdm import tqdm
+
+# preprocess and pipeline
+from preprocess import Preprocess
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 from feature_engine.selection import DropConstantFeatures
@@ -23,19 +26,16 @@ from sklearn.metrics import f1_score
 # models
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import ExtraTreeClassifier
-from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.linear_model import RidgeClassifier
 from sklearn.linear_model import SGDClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.naive_bayes import BernoulliNB
-from sklearn.ensemble import VotingClassifier
 from catboost import CatBoostClassifier
 
 train_path = 'data/train.csv'
@@ -144,7 +144,7 @@ class ModelTitanic:
             cv = cross_val_score(pipeline, X, y, cv=5, scoring='roc_auc')
             if cv.mean() > max_pipeline_score:
                 max_pipeline_score = cv.mean()
-                joblib.dump(pipeline, 'results/pipeline.pkl')
+                joblib.dump(pipeline, 'results/model_selection_pipeline.pkl')
 
             # dd/mm/YY H:M:S
             now = datetime.now()
@@ -176,7 +176,7 @@ class ModelTitanic:
             self.df_train = pd.read_csv(train_preprocessed_path)
 
         # model selection if not performed
-        if not os.path.exists('results/pipeline.pkl'):
+        if not os.path.exists('results/model_selection_pipeline.pkl'):
             print('Performing Model Selection...')
             df_models_performances = self.select_model(self.df_train, self.survived)
             print(df_models_performances)
