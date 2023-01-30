@@ -24,11 +24,28 @@ from src.dataprep.Preprocess import Preprocess
 
 
 class ModelTitanic:
+    classifiers = {  # classifiers to examine for model selection
+        "DummyClassifier": DummyClassifier(strategy='most_frequent'),
+        "XGBClassifier": XGBClassifier(use_label_encoder=False, eval_metric='logloss', objective='binary:logistic'),
+        "RandomForestClassifier": RandomForestClassifier(),
+        "DecisionTreeClassifier": DecisionTreeClassifier(),
+        "ExtraTreeClassifier": ExtraTreeClassifier(),
+        "ExtraTreesClassifier": ExtraTreeClassifier(),
+        "AdaBoostClassifier": AdaBoostClassifier(),
+        "KNeighborsClassifier": KNeighborsClassifier(),
+        "RidgeClassifier": RidgeClassifier(),
+        "SGDClassifier": SGDClassifier(),
+        "BaggingClassifier": BaggingClassifier(),
+        "BernoulliNB": BernoulliNB(),
+        "SVC": SVC(),
+        "CatBoostClassifier": CatBoostClassifier(silent=True),
+    }
+
     def __init__(self, df_train_path: str = consts.TRAIN_PATH, ):
         """
-        Will make a preprocessor sklearn ColumnTransformer for using in pipeline
+        Will make a model pipeline with preprocees step, model step etc.
         Args:
-            df_train_path: path of titanic dataframe kind data with columns:
+            df_train_path: path of titanic csv kind data with columns:
             ['PassengerId', 'Survived', 'Pclass', 'Name', 'Sex', 'Age',
             'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked']
         """
@@ -43,12 +60,14 @@ class ModelTitanic:
     def get_pipeline(self, model=None, model_name: str = 'model', train: bool = False) -> Pipeline:
         """
         Return a pipeline to preprocess data and bundle with a model.
+        When used for model selection we don't need to perform preprocess and feature selection everytime so
+        pipeline will be just the model.
         Args:
             model: scikit-learn instantiated model object, e.g. XGBClassifier (or scikit-learn model compatible
             e.g. xgboost library)
             model_name: model name to be in the pipeline
-            train: if used for model selection then we don't need to perform feature selection every as it is the same
-            regardless of what model is being used to classify
+            train: if used for model selection then we don't need to perform feature selection everytime as it is the
+            same regardless of what model is being used to classify
 
         Returns:
             Pipeline (object): Pipeline steps.
@@ -91,35 +110,13 @@ class ModelTitanic:
         """
         max_pipeline_score = 0
 
-        classifiers = {}
-        classifiers.update({"DummyClassifier": DummyClassifier(strategy='most_frequent')})
-        classifiers.update({"XGBClassifier": XGBClassifier(use_label_encoder=False,
-                                                           eval_metric='logloss',
-                                                           objective='binary:logistic',
-                                                           )})
-        # classifiers.update({"LGBMClassifier": LGBMClassifier()})
-        classifiers.update({"RandomForestClassifier": RandomForestClassifier()})
-        classifiers.update({"DecisionTreeClassifier": DecisionTreeClassifier()})
-        classifiers.update({"ExtraTreeClassifier": ExtraTreeClassifier()})
-        classifiers.update({"ExtraTreesClassifier": ExtraTreeClassifier()})
-        classifiers.update({"AdaBoostClassifier": AdaBoostClassifier()})
-        classifiers.update({"KNeighborsClassifier": KNeighborsClassifier()})
-        classifiers.update({"RidgeClassifier": RidgeClassifier()})
-        classifiers.update({"SGDClassifier": SGDClassifier()})
-        classifiers.update({"BaggingClassifier": BaggingClassifier()})
-        classifiers.update({"BernoulliNB": BernoulliNB()})
-        classifiers.update({"SVC": SVC()})
-        classifiers.update({"CatBoostClassifier": CatBoostClassifier(silent=True)})
-
         # df of model performance
         df_models_performances = pd.DataFrame(columns=['model', 'time_executed', 'run_time_sec',
                                                        'roc_auc', 'score_std'])
 
-        for key in tqdm(classifiers):
+        for key in tqdm(self.classifiers):
             start_time = time.time()
-
-            pipeline = self.get_pipeline(model=classifiers[key], model_name=key, train=True)
-
+            pipeline = self.get_pipeline(model=self.classifiers[key], model_name=key, train=True)
             cv = cross_val_score(pipeline, X, y, cv=5, scoring='roc_auc')
             if cv.mean() > max_pipeline_score:
                 max_pipeline_score = cv.mean()
