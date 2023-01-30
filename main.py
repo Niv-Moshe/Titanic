@@ -1,9 +1,7 @@
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 import os
-from preprocess import Preprocess
-from model import ModelTitanic, train_path, test_path
+from src.model import ModelTitanic, train_path, test_path
 
 
 def create_train_test_files():
