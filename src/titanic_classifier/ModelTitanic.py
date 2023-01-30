@@ -29,10 +29,10 @@ from sklearn.ensemble import BaggingClassifier
 from sklearn.naive_bayes import BernoulliNB
 from catboost import CatBoostClassifier
 
-train_path = '../../data/train.csv'
-test_path = '../../data/test.csv'
+train_path = 'C:/Users/nivm2/PycharmProjects/Titanic/data/train.csv'
+test_path = 'C:/Users/nivm2/PycharmProjects/Titanic/data/test.csv'
 # path for preprocessed (feature engineering and feature selection) train
-train_preprocessed_path = '../../data/train_preprocessed.csv'
+train_preprocessed_path = 'C:/Users/nivm2/PycharmProjects/Titanic//data/train_preprocessed.csv'
 
 
 class ModelTitanic:
