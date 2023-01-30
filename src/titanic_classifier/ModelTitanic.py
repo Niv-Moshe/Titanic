@@ -8,29 +8,23 @@ from feature_engine.selection import DropConstantFeatures
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.feature_selection import RFECV
-from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import accuracy_score, roc_auc_score, classification_report, confusion_matrix, f1_score
 from sklearn.svm import SVC
 from sklearn.dummy import DummyClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
-from sklearn.linear_model import RidgeClassifier, SGDClassifier
+from sklearn.linear_model import LogisticRegression, RidgeClassifier, SGDClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, BaggingClassifier
 from sklearn.naive_bayes import BernoulliNB
 from catboost import CatBoostClassifier
 from xgboost import XGBClassifier
+import src.consts as consts
 from src.dataprep.Preprocess import Preprocess
 
 
-train_path = 'C:/Users/nivm2/PycharmProjects/Titanic/data/train.csv'
-test_path = 'C:/Users/nivm2/PycharmProjects/Titanic/data/test.csv'
-# path for preprocessed (feature engineering and feature selection) train
-train_preprocessed_path = 'C:/Users/nivm2/PycharmProjects/Titanic//data/train_preprocessed.csv'
-
-
 class ModelTitanic:
-    def __init__(self, df_train_path: str = train_path, ):
+    def __init__(self, df_train_path: str = consts.TRAIN_PATH, ):
         """
         Will make a preprocessor sklearn ColumnTransformer for using in pipeline
         Args:
@@ -59,7 +53,7 @@ class ModelTitanic:
         Returns:
             Pipeline (object): Pipeline steps.
         """
-        if train and os.path.exists(train_preprocessed_path):  # used for model selection
+        if train and os.path.exists(consts.TRAIN_PREPROCESSED_PATH):  # used for model selection
             assert model is not None, 'model shouldn\'t be None for model selection run'
             # function used for model selection during train
             pipeline = Pipeline(steps=[('model', model)])
@@ -129,7 +123,7 @@ class ModelTitanic:
             cv = cross_val_score(pipeline, X, y, cv=5, scoring='roc_auc')
             if cv.mean() > max_pipeline_score:
                 max_pipeline_score = cv.mean()
-                joblib.dump(pipeline, 'results/pipeline.pkl')
+                joblib.dump(pipeline, consts.SELECTED_MODEL_PIPE_PATH)
 
             # dd/mm/YY H:M:S
             now = datetime.now()
@@ -145,23 +139,23 @@ class ModelTitanic:
             df_models_performances = df_models_performances.append(row, ignore_index=True)
 
         df_models_performances = df_models_performances.sort_values(by='roc_auc', ascending=False, ignore_index=True)
-        df_models_performances.to_csv('results/models_performances.csv')
+        df_models_performances.to_csv(consts.MODELS_PERFORMANCES_PATH)
         return df_models_performances
 
     def train(self, ):
         # creating preprocessed train dataset
-        if not os.path.exists(train_preprocessed_path):
+        if not os.path.exists(consts.TRAIN_PREPROCESSED_PATH):
             print('Preprocessing train...')
             preprocess_pipeline = self.get_pipeline(train=True)
             self.df_train = preprocess_pipeline.fit_transform(self.df_train, self.survived)
             # saving preprocessed train
-            self.df_train.to_csv(train_preprocessed_path)
+            self.df_train.to_csv(consts.TRAIN_PREPROCESSED_PATH)
         else:
             print('Loading preprocessed train...')
-            self.df_train = pd.read_csv(train_preprocessed_path)
+            self.df_train = pd.read_csv(consts.TRAIN_PREPROCESSED_PATH)
 
         # model selection if not performed
-        if not os.path.exists('results/pipeline.pkl'):
+        if not os.path.exists(consts.SELECTED_MODEL_PIPE_PATH):
             print('Performing Model Selection...')
             df_models_performances = self.select_model(self.df_train, self.survived)
             print(df_models_performances)
