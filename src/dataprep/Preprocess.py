@@ -14,11 +14,13 @@ from src.dataprep.FixNamesTransformer import FixNamesTransformer
 # from DropSmallMissingData import DropSmallMissingData
 warnings.filterwarnings("ignore")
 
+MISSINGNESS_PCT = 0.005
+
 
 def drop_small_missing_data(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
     nulls_percent = df.isna().sum() / len(df)
     # dropping row for features with less than 0.5% of missing values
-    small_missing_values_features = [feature for feature in features if 0 < nulls_percent[feature] < 0.005]
+    small_missing_values_features = [feature for feature in features if 0 < nulls_percent[feature] < MISSINGNESS_PCT]
     for feature in small_missing_values_features:
         df = df[df[feature].notnull()]
     return df
