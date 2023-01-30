@@ -58,7 +58,7 @@ def solo_feature_from_parch_sibsp(df, y=None) -> pd.DataFrame:
     return df
 
 
-def CabinChar_feature_from_cabin(df: pd.DataFrame) -> pd.DataFrame:
+def cabin_char_feature_from_cabin(df: pd.DataFrame) -> pd.DataFrame:
     # Extracting first character from the cabin (which is with about 70% of missing values in train)
     cabins = df['Cabin'].astype(str)
     cabin_char = [cab[0] for cab in cabins]  # when NaN then char would be 'n'
@@ -66,7 +66,7 @@ def CabinChar_feature_from_cabin(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def TicketGroup_GroupSize_features_from_ticket(df: pd.DataFrame) -> pd.DataFrame:
+def ticket_group_and_group_size_features_from_ticket(df: pd.DataFrame) -> pd.DataFrame:
     ticket_counts_dict = df['Ticket'].value_counts().to_dict()
     df['TicketGroup'] = df['Ticket'].apply(lambda x: 1 if ticket_counts_dict[x] > 1 else 0)
     df['GroupSize'] = df['Ticket'].map(ticket_counts_dict)
@@ -134,10 +134,10 @@ class Preprocess:
              ['Name']),
             ('solo_feature_from_parch_sibsp', FunctionTransformer(solo_feature_from_parch_sibsp, validate=False),
              ['Parch', 'SibSp']),
-            ('CabinChar_feature_from_cabin', FunctionTransformer(CabinChar_feature_from_cabin, validate=False),
+            ('CabinChar_feature_from_cabin', FunctionTransformer(cabin_char_feature_from_cabin, validate=False),
              ['Cabin']),
             ('TicketGroup_GroupSize_features_from_ticket',
-             FunctionTransformer(TicketGroup_GroupSize_features_from_ticket, validate=False),
+             FunctionTransformer(ticket_group_and_group_size_features_from_ticket, validate=False),
              ['Ticket']),
             ('feature_index_for_missing_data', FunctionTransformer(feature_index_for_missing_data,
                                                                    kw_args={'features': features_with_missingness},
