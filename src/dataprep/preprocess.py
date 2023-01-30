@@ -1,17 +1,17 @@
-from src.dataprep.FixNamesTransformer import FixNamesTransformer
-# from DropSmallMissingData import DropSmallMissingData
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 import pandas as pd
 import numpy as np
 import re
+import warnings
+from typing import List, Tuple
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder, FunctionTransformer
 from sklearn.linear_model import LinearRegression
 from sklearn.experimental import enable_iterative_imputer  # IterativeImputer doesn't work without this import
 from sklearn.impute import IterativeImputer
 from feature_engine.selection import DropFeatures
-from typing import List, Tuple
-import warnings
+from src.dataprep.FixNamesTransformer import FixNamesTransformer
+# from DropSmallMissingData import DropSmallMissingData
 warnings.filterwarnings("ignore")
 
 

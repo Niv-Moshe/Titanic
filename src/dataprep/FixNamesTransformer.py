@@ -1,6 +1,5 @@
-from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
-
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
 class FixNamesTransformer(BaseEstimator, TransformerMixin):

@@ -1,33 +1,27 @@
-from src.dataprep.preprocess import Preprocess
-import pandas as pd
 import os
 import joblib
 import time
+import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
+from feature_engine.selection import DropConstantFeatures
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
-from feature_engine.selection import DropConstantFeatures
 from sklearn.feature_selection import RFECV
 from sklearn.linear_model import LogisticRegression
-
-# metrics
 from sklearn.model_selection import cross_val_score
-
-# models
+from sklearn.metrics import accuracy_score, roc_auc_score, classification_report, confusion_matrix, f1_score
 from sklearn.svm import SVC
-from xgboost import XGBClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.tree import ExtraTreeClassifier
-from sklearn.linear_model import RidgeClassifier
-from sklearn.linear_model import SGDClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
+from sklearn.linear_model import RidgeClassifier, SGDClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, BaggingClassifier
 from sklearn.naive_bayes import BernoulliNB
 from catboost import CatBoostClassifier
+from xgboost import XGBClassifier
+from src.dataprep.preprocess import Preprocess
+
 
 train_path = 'C:/Users/nivm2/PycharmProjects/Titanic/data/train.csv'
 test_path = 'C:/Users/nivm2/PycharmProjects/Titanic/data/test.csv'

@@ -1,6 +1,6 @@
+import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
-import os
 from src.titanic_classifier.ModelTitanic import ModelTitanic, train_path, test_path
 
 
