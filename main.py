@@ -19,8 +19,8 @@ def create_train_test_files():
 
 def main():
     create_train_test_files()
-    # Preprocess(df_path=train_path)
-    model = ModelTitanic(df_train_path=consts.TRAIN_PATH)
+    df_train = pd.read_csv(consts.TRAIN_PATH)
+    model = ModelTitanic(df_train=df_train)
     model.train()
     pass
 
