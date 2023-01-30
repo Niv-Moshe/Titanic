@@ -6,4 +6,4 @@ TRAIN_PREPROCESSED_PATH: str = 'C:/Users/nivm2/PycharmProjects/Titanic/data/trai
 
 # models performances experiments log path
 MODELS_PERFORMANCES_PATH: str = 'C:/Users/nivm2/PycharmProjects/Titanic/results/models_performances.csv'
-SELECTED_MODEL_PIPE_PATH: str = 'C:/Users/nivm2/PycharmProjects/Titanic/results/pipeline.pkl'
+SELECTED_MODEL_PIPE_PATH: str = 'C:/Users/nivm2/PycharmProjects/Titanic/results/model_selection_pipeline.pkl'
