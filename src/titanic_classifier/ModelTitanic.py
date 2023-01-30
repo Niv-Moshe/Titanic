@@ -20,7 +20,7 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, Bagging
 from sklearn.naive_bayes import BernoulliNB
 from catboost import CatBoostClassifier
 from xgboost import XGBClassifier
-from src.dataprep.preprocess import Preprocess
+from src.dataprep.Preprocess import Preprocess
 
 
 train_path = 'C:/Users/nivm2/PycharmProjects/Titanic/data/train.csv'
