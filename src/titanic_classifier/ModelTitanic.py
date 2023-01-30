@@ -41,17 +41,17 @@ class ModelTitanic:
         "CatBoostClassifier": CatBoostClassifier(silent=True),
     }
 
-    def __init__(self, df_train_path: str = consts.TRAIN_PATH, ):
+    def __init__(self, df_train: pd.DataFrame = None):
         """
         Will make a model pipeline with preprocees step, model step etc.
         Args:
-            df_train_path: path of titanic csv kind data with columns:
+            df_train: titanic dataframe kind data with columns:
             ['PassengerId', 'Survived', 'Pclass', 'Name', 'Sex', 'Age',
             'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked']
         """
-        self.df_train_path = df_train_path
-        # self.df_train = pd.read_csv(self.df_train_path)
-        self.preprocess = Preprocess(df_path=self.df_train_path)
+        assert df_train is not None, 'train dataframe shouldn\'t be None for ModelTitanic class'
+        self.df_train = df_train
+        self.preprocess = Preprocess(df_train=self.df_train)
         self.df_train = self.preprocess.get_df()
         self.survived = self.df_train['Survived']  # target variable
         self.features = list(self.df_train.columns)

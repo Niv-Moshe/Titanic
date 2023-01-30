@@ -10,28 +10,24 @@ warnings.filterwarnings("ignore")
 
 
 class Preprocess:
-    def __init__(self, df: pd.DataFrame = None, df_path: str = None):
+    def __init__(self, df_train: pd.DataFrame = None):
         """
-        Will make a preprocessor sklearn ColumnTransformer for using in pipeline
+        Will make a feature engineering and preprocessor sklearn pipeline
         Args:
-            df_path: path of titanic dataframe kind data with columns:
+            df_train: titanic dataframe kind data with columns:
             ['PassengerId', 'Survived', 'Pclass', 'Name', 'Sex', 'Age',
             'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked']
-            df: if given otherwise read from path
         """
-        assert not all(v is None for v in [df_path, df]), "One argument should be not None"
-        if df_path is not None:
-            self.df = pd.read_csv(df_path)
-        else:
-            self.df = df
-        self.features = list(self.df.columns)
+        assert df_train is not None, 'train dataframe shouldn\'t be None for preprocess class'
+        self.df_train = df_train
+        self.features = list(self.df_train.columns)
         # creating an empty pipeline
         self.preprocess_pipeline = Pipeline(steps=[], verbose=True)
         # updating the pipeline
         self.make_preprocess_pipeline()
 
     def get_df(self):
-        return self.df
+        return self.df_train
 
     def get_preprocess_pipeline(self):
         return self.preprocess_pipeline
@@ -40,10 +36,10 @@ class Preprocess:
         """
         Function for making new features out of existing ones, and dealing with missing data partially
         """
-        nulls_count = self.df.isna().sum()
+        nulls_count = self.df_train.isna().sum()
         features_with_missingness = [feature for feature in self.features if nulls_count[feature] >= 1]
         # after that we are with columns that have more than a few missing values
-        self.df = preprocess_utils.drop_small_missing_data(self.df, features_with_missingness)
+        self.df_train = preprocess_utils.drop_small_missing_data(self.df_train, features_with_missingness)
 
         feature_engineering_transformer = ColumnTransformer(remainder='passthrough', transformers=[
             ('honorifics_feature_from_name', FunctionTransformer(preprocess_utils.honorifics_feature_from_name,
@@ -67,13 +63,14 @@ class Preprocess:
 
     def make_preprocess_pipeline(self):
         """
-            Making pipeline steps for feature engineering and preprocessing data
-            Returns: updates the self.pipeline object
+        Appending new pipeline steps for feature engineering and preprocessing data
+
+        Returns: updates the self.pipeline object
         """
         # dropping PassengerId which is an index column and target variable Survived
         self.preprocess_pipeline.steps.append(['drop_PassengerId_Survived', DropFeatures(['PassengerId', 'Survived'])])
 
-        # performing feature engineering - creating new features
+        # performing feature engineering - creating new features and droppping unncessary ones
         feature_engineering_transformer = self.feature_engineering()
         self.preprocess_pipeline.steps.append(['feature_engineering', feature_engineering_transformer])
         self.preprocess_pipeline.steps.append(['fix_names_after_feature_engineering', FixNamesTransformer()])
