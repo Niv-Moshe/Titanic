@@ -1,6 +1,5 @@
-from preprocess import Preprocess
+from src.dataprep.preprocess import Preprocess
 import pandas as pd
-import numpy as np
 import os
 import joblib
 import time
@@ -14,28 +13,20 @@ from sklearn.linear_model import LogisticRegression
 
 # metrics
 from sklearn.model_selection import cross_val_score
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import f1_score
 
 # models
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import ExtraTreeClassifier
-from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.linear_model import RidgeClassifier
 from sklearn.linear_model import SGDClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.naive_bayes import BernoulliNB
-from sklearn.ensemble import VotingClassifier
 from catboost import CatBoostClassifier
 
 train_path = '../data/train.csv'
