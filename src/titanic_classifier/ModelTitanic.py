@@ -52,7 +52,7 @@ class ModelTitanic:
         assert df_train is not None, 'train dataframe shouldn\'t be None for ModelTitanic class'
         self.df_train = df_train
         self.preprocess = Preprocess(df_train=self.df_train)
-        self.df_train = self.preprocess.get_df()
+        self.df_train = self.preprocess.df_train
         self.survived = self.df_train['Survived']  # target variable
         self.features = list(self.df_train.columns)
         self.pipeline = Pipeline(steps=[], verbose=True)
@@ -80,7 +80,7 @@ class ModelTitanic:
             return pipeline
 
         # preprocess pipeline + feature selection + model to classify for test purposes
-        pipeline = self.preprocess.get_preprocess_pipeline()
+        pipeline = self.preprocess.preprocess_pipeline
         pipeline.steps.append(['poly', PolynomialFeatures(include_bias=False, interaction_only=True)])
 
         # dropping interaction features that are columns of zeros

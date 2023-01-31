@@ -19,27 +19,29 @@ class Preprocess:
             'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked']
         """
         assert df_train is not None, 'train dataframe shouldn\'t be None for preprocess class'
-        self.df_train = df_train
-        self.features = list(self.df_train.columns)
+        self._df_train = df_train
+        self.features = list(self._df_train.columns)
         # creating an empty pipeline
-        self.preprocess_pipeline = Pipeline(steps=[], verbose=True)
+        self._preprocess_pipeline = Pipeline(steps=[], verbose=True)
         # updating the pipeline
         self.make_preprocess_pipeline()
 
-    def get_df(self):
-        return self.df_train
+    @property
+    def df_train(self):
+        return self._df_train
 
-    def get_preprocess_pipeline(self):
-        return self.preprocess_pipeline
+    @property
+    def preprocess_pipeline(self):
+        return self._preprocess_pipeline
 
     def feature_engineering(self) -> ColumnTransformer:
         """
         Function for making new features out of existing ones, and dealing with missing data partially
         """
-        nulls_count = self.df_train.isna().sum()
+        nulls_count = self._df_train.isna().sum()
         features_with_missingness = [feature for feature in self.features if nulls_count[feature] >= 1]
         # after that we are with columns that have more than a few missing values
-        self.df_train = preprocess_utils.drop_small_missing_data(self.df_train, features_with_missingness)
+        self._df_train = preprocess_utils.drop_small_missing_data(self._df_train, features_with_missingness)
 
         feature_engineering_transformer = ColumnTransformer(remainder='passthrough', transformers=[
             ('honorifics_feature_from_name', FunctionTransformer(preprocess_utils.honorifics_feature_from_name,
@@ -68,14 +70,14 @@ class Preprocess:
         Returns: updates the self.pipeline object
         """
         # dropping PassengerId which is an index column and target variable Survived
-        self.preprocess_pipeline.steps.append(['drop_PassengerId_Survived', DropFeatures(['PassengerId', 'Survived'])])
+        self._preprocess_pipeline.steps.append(['drop_PassengerId_Survived', DropFeatures(['PassengerId', 'Survived'])])
 
         # performing feature engineering - creating new features and droppping unncessary ones
         feature_engineering_transformer = self.feature_engineering()
-        self.preprocess_pipeline.steps.append(['feature_engineering', feature_engineering_transformer])
-        self.preprocess_pipeline.steps.append(['fix_names_after_feature_engineering', FixNamesTransformer()])
-        self.preprocess_pipeline.steps.append(['drop_unnecessary_columns',
-                                               DropFeatures(['Name',
+        self._preprocess_pipeline.steps.append(['feature_engineering', feature_engineering_transformer])
+        self._preprocess_pipeline.steps.append(['fix_names_after_feature_engineering', FixNamesTransformer()])
+        self._preprocess_pipeline.steps.append(['drop_unnecessary_columns',
+                                                DropFeatures(['Name',
                                                              'Ticket',
                                                              'Cabin',  # two cabin columns are left because used twice
                                                              ])])
@@ -85,7 +87,7 @@ class Preprocess:
                         preprocess_utils.one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"]),
                         preprocess_utils.numeric_imputing_transformer(["Age"])
                         ]
-        self.preprocess_pipeline.steps.append(['preprocess',
-                                               ColumnTransformer(transformers=transformers, remainder='passthrough')])
-        self.preprocess_pipeline.steps.append(['fix_names_after_preprocess', FixNamesTransformer()])
-        self.preprocess_pipeline.set_output(transform="pandas")
+        self._preprocess_pipeline.steps.append(['preprocess',
+                                                ColumnTransformer(transformers=transformers, remainder='passthrough')])
+        self._preprocess_pipeline.steps.append(['fix_names_after_preprocess', FixNamesTransformer()])
+        self._preprocess_pipeline.set_output(transform="pandas")
