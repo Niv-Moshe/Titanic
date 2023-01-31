@@ -1,9 +1,14 @@
-from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
-
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
 class FixNamesTransformer(BaseEstimator, TransformerMixin):
+    """
+    Fixing names after steps when Pipeline/ColumnTransformer set_output is for pandas dataframe, names are prepended
+    with the steps done on the columns e.g. label_encoder__Sex.
+    This class removes the prepended steps names and should be inserted as part of the pipeline after
+    ColumnTransformers for instance.
+    """
     def fit(self, X, y=None):
         # y to support API
         self.cols = [x.split('__')[1] for x in X.columns]  # column names of format label_encoder__Sex
