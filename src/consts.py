@@ -1,6 +1,9 @@
 # data paths
+TITANIC_PATH: str = 'C:/Users/nivm2/PycharmProjects/Titanic/data/titanic.csv'
 TRAIN_PATH: str = 'C:/Users/nivm2/PycharmProjects/Titanic/data/train.csv'
 TEST_PATH: str = 'C:/Users/nivm2/PycharmProjects/Titanic/data/test.csv'
+TEST_SIZE: float = 0.2
+RANDOM_STATE_SPLIT: int = 42
 # path for preprocessed (feature engineering and feature selection) train
 TRAIN_PREPROCESSED_PATH: str = 'C:/Users/nivm2/PycharmProjects/Titanic/data/train_preprocessed.csv'
 
