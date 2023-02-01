@@ -1,5 +1,8 @@
+from __future__ import annotations
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
+from typing import Union, List
 
 
 class FixNamesTransformer(BaseEstimator, TransformerMixin):
@@ -9,24 +12,24 @@ class FixNamesTransformer(BaseEstimator, TransformerMixin):
     This class removes the prepended steps names and should be inserted as part of the pipeline after
     ColumnTransformers for instance.
     """
-    def fit(self, X, y=None):
+    def fit(self, X: pd.DataFrame, y: Union[pd.DataFrame, np.array] = None) -> FixNamesTransformer:
         # y to support API
         self.cols = [x.split('__')[1] for x in X.columns]  # column names of format label_encoder__Sex
         return self
 
-    def transform(self, X, y=None):
+    def transform(self, X: pd.DataFrame, y: Union[pd.DataFrame, np.array] = None) -> np.ndarray:
         self.cols = [x.split('__')[1] for x in X.columns]  # column names of format label_encoder__Sex
         return X.values
 
-    def fit_transform(self, X, y=None, **fit_params):
+    def fit_transform(self, X: pd.DataFrame, y: Union[pd.DataFrame, np.array] = None, **fit_params) -> np.ndarray:
         return self.transform(X, y)
 
-    def get_feature_names(self, input_features=None):
+    def get_feature_names(self, input_features: List[str] = None) -> List[str]:
         # to support get_feature_names (get_feature_names is deprecated in 1.0 and
         # will be removed in 1.2. Please use get_feature_names_out instead)
         return self.get_feature_names_out(input_features)
 
-    def get_feature_names_out(self, input_features=None):
+    def get_feature_names_out(self, input_features: List[str] = None) -> List[str]:
         if input_features is None:
-            return np.array(self.cols)
+            return list(self.cols)
         return [x.split('__')[1] for x in input_features]
