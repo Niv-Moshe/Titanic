@@ -10,7 +10,7 @@ warnings.filterwarnings("ignore")
 
 
 class Preprocess:
-    def __init__(self, df_train: pd.DataFrame = None):
+    def __init__(self, df_train: pd.DataFrame = None, label_encode: bool = True, one_hot_encode: bool = True):
         """
         Will make a feature engineering and preprocessor sklearn pipeline
         Args:
@@ -24,7 +24,7 @@ class Preprocess:
         # creating an empty pipeline
         self._preprocess_pipeline = Pipeline(steps=[], verbose=True)
         # updating the pipeline
-        self.make_preprocess_pipeline()
+        self.make_preprocess_pipeline(label_encode=label_encode, one_hot_encode=one_hot_encode)
 
     @property
     def df_train(self):
@@ -63,14 +63,14 @@ class Preprocess:
         ])
         return feature_engineering_transformer
 
-    def make_preprocess_pipeline(self):
+    def make_preprocess_pipeline(self, label_encode: bool = True, one_hot_encode: bool = True):
         """
         Appending new pipeline steps for feature engineering and preprocessing data
 
         Returns: updates the self.pipeline object
         """
         # dropping PassengerId which is an index column and target variable Survived
-        self._preprocess_pipeline.steps.append(['drop_PassengerId_Survived', DropFeatures(['PassengerId', 'Survived'])])
+        self._preprocess_pipeline.steps.append(['drop_PassengerId', DropFeatures(['PassengerId'])])
 
         # performing feature engineering - creating new features and droppping unncessary ones
         feature_engineering_transformer = self.feature_engineering()
@@ -83,10 +83,13 @@ class Preprocess:
                                                              ])])
 
         # preprocessing the data: label encoding, one hot encoding and imputing
-        transformers = [preprocess_utils.label_encoding_transformer(['Sex']),
-                        preprocess_utils.one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"]),
-                        preprocess_utils.numeric_imputing_transformer(["Age"])
-                        ]
+        transformers = []
+        if label_encode:
+            transformers.append(preprocess_utils.label_encoding_transformer(['Sex']))
+        if one_hot_encode:
+            transformers.append(preprocess_utils.one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"]))
+        transformers.append(preprocess_utils.numeric_imputing_transformer(["Age"]))
+
         self._preprocess_pipeline.steps.append(['preprocess',
                                                 ColumnTransformer(transformers=transformers, remainder='passthrough')])
         self._preprocess_pipeline.steps.append(['fix_names_after_preprocess', FixNamesTransformer()])
