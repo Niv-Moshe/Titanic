@@ -61,7 +61,7 @@ class ModelTitanic:
         self._y_train = self._X_train['Survived']  # target variable
         self._X_train = self._X_train.drop(columns=['Survived'], axis=1)
         self.features = list(self._X_train.columns)
-        self.pipeline = Pipeline(steps=[], verbose=True)  # pipeline to be performed on test also
+        self.pipeline = Pipeline(steps=[], verbose=True)  # fit pipeline to be performed on test also
 
     @property
     def X_train(self) -> pd.DataFrame:
@@ -96,12 +96,15 @@ class ModelTitanic:
 
         # preprocess pipeline + feature selection + model to classify for test purposes
         pipeline = self.preprocess.preprocess_pipeline
-        pipeline.steps.append(['poly', PolynomialFeatures(include_bias=False, interaction_only=True)])
-
+        polynomial_features_step = ['poly', PolynomialFeatures(include_bias=False, interaction_only=True)]
         # dropping interaction features that are columns of zeros
-        pipeline.steps.append(['drop_constant_features', DropConstantFeatures()])
-        pipeline.steps.append(['feature_select',
-                               RFECV(estimator=LogisticRegression(), step=1, cv=5, scoring='roc_auc')])
+        drop_constant_features_step = ['drop_constant_features', DropConstantFeatures()]
+        feature_selection_step = ['feature_selection', RFECV(estimator=LogisticRegression(),
+                                                             step=1, cv=5, scoring='roc_auc')]
+        # appending all steps to the pipeline
+        pipeline.steps.append(polynomial_features_step)
+        pipeline.steps.append(drop_constant_features_step)
+        pipeline.steps.append(feature_selection_step)
         pipeline.set_output(transform="pandas")
 
         # running for creating preprocessed train dataset + feature selection
