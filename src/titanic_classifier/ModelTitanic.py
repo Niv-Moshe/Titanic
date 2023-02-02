@@ -100,7 +100,7 @@ class ModelTitanic:
         # dropping interaction features that are columns of zeros
         drop_constant_features_step = ['drop_constant_features', DropConstantFeatures()]
         feature_selection_step = ['feature_selection', RFECV(estimator=LogisticRegression(),
-                                                             step=1, cv=5, scoring='roc_auc')]
+                                                             step=1, cv=5, scoring='f1')]
         # appending all steps to the pipeline
         pipeline.steps.append(polynomial_features_step)
         pipeline.steps.append(drop_constant_features_step)
