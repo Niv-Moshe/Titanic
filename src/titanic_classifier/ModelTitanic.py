@@ -66,11 +66,11 @@ class ModelTitanic:
         self.pipeline = Pipeline(steps=[], verbose=True)  # pipeline to be performed on test also
 
     @property
-    def X_train(self):
+    def X_train(self) -> pd.DataFrame:
         return self._X_train
 
     @property
-    def y_train(self):
+    def y_train(self) -> pd.DataFrame:
         return self._y_train
 
     def get_pipeline(self, model=None, model_name: str = 'model', train: bool = False) -> Pipeline:
