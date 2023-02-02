@@ -48,7 +48,7 @@ class Preprocess:
 
     def feature_engineering(self) -> ColumnTransformer:
         """
-        Function for making new features out of existing ones, and dealing with missing data partially.
+        Function for making new features out of existing ones, and dealing with missing data partially (only for train).
 
         Returns:
             ColumnTransformer for creating new features.
@@ -69,34 +69,39 @@ class Preprocess:
                                                             verbose_feature_names_out=False)
         return feature_engineering_transformer
 
-    def make_preprocess_pipeline(self):
+    def make_preprocess_pipeline(self) -> None:
         """
         Appending new pipeline steps for feature engineering and preprocessing data.
 
         Returns: updates the self.pipeline object.
         """
         # dropping PassengerId which is an index column
-        self._preprocess_pipeline.steps.append(['drop_PassengerId', DropFeatures(['PassengerId'])])
+        drop_passenger_id_step = ['drop_PassengerId', DropFeatures(['PassengerId'])]
 
-        # performing feature engineering - creating new features and droppping unncessary ones
+        # performing feature engineering - creating new features and dropping unnecessary ones
         feature_engineering_transformer = self.feature_engineering()
-        self._preprocess_pipeline.steps.append(['feature_engineering', feature_engineering_transformer])
-        self._preprocess_pipeline.steps.append([
-            'drop_unnecessary_columns',
-            # two cabin columns are left because used twice in feature engineering
-            DropFeatures(['Name', 'Ticket', 'Cabin'])
-        ])
+        feature_engineering_step = ['feature_engineering', feature_engineering_transformer]
+        # two cabin columns are left because used twice in feature engineering (built in behavior)
+        drop_features_step = ['drop_unnecessary_columns', DropFeatures(['Name', 'Ticket', 'Cabin'])]
 
         # preprocessing the data: label encoding, one hot encoding and imputing
         transformers = []
         if self._label_encode:
-            transformers.append(preprocess_utils.label_encoding_transformer(['Sex']))
+            label_encoding_transformer = preprocess_utils.label_encoding_transformer(['Sex'])
+            transformers.append(label_encoding_transformer)
         if self._one_hot_encode:
-            transformers.append(preprocess_utils.one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"]))
+            one_hot_encoding_transformer = \
+                preprocess_utils.one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"])
+            transformers.append(one_hot_encoding_transformer)
 
         transformers.append(preprocess_utils.numeric_imputing_transformer(["Age"]))
 
-        self._preprocess_pipeline.steps.append(['preprocess',
-                                                ColumnTransformer(transformers=transformers, remainder='passthrough',
-                                                                  verbose_feature_names_out=False)])
+        preprocess_step = ['preprocess', ColumnTransformer(transformers=transformers, remainder='passthrough',
+                                                           verbose_feature_names_out=False)]
+
+        # appending all steps to the pipeline
+        self._preprocess_pipeline.steps.append(drop_passenger_id_step)
+        self._preprocess_pipeline.steps.append(feature_engineering_step)
+        self._preprocess_pipeline.steps.append(drop_features_step)
+        self._preprocess_pipeline.steps.append(preprocess_step)
         self._preprocess_pipeline.set_output(transform="pandas")
