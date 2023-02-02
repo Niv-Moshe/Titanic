@@ -21,7 +21,7 @@ def main():
     create_train_test_files()
     df_train = pd.read_csv(consts.TRAIN_PATH)
     model = ModelTitanic(df_train=df_train)
-    model.train()
+    # model.perform_model_selection()
 
 
 if __name__ == "__main__":
