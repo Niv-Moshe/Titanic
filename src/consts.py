@@ -24,3 +24,4 @@ class PreprocessUtilsConsts:
         "Mrs", "Mr", "Ms", "Miss", "Master", "Don", "Rev", "Mme", "Major", "Mlle", "Col", "Capt", "Jonkheer",
         "Countess", "Dr",
     ]
+    CABIN_NONE_CONST: str = 'X'

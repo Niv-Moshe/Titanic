@@ -114,8 +114,8 @@ def cabin_char_feature_from_cabin(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         New dataframe with a CabinChar column.
     """
-    cabins = df['Cabin'].astype(str)
-    cabin_char = [cab[0] for cab in cabins]  # when NaN then char would be 'n'
+    cabins = df['Cabin'].fillna(PreprocessUtilsConsts.CABIN_NONE_CONST)
+    cabin_char = [cab[0] for cab in cabins]
     df['CabinChar'] = cabin_char
     return df
 
