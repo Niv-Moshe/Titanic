@@ -8,8 +8,7 @@ from sklearn.experimental import enable_iterative_imputer  # IterativeImputer do
 from sklearn.impute import IterativeImputer
 from sklearn.preprocessing import FunctionTransformer
 
-
-MISSINGNESS_PCT: float = 0.005
+from src.consts import PreprocessUtilsConsts
 
 
 def drop_small_missing_data(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
@@ -25,7 +24,8 @@ def drop_small_missing_data(df: pd.DataFrame, features: List[str]) -> pd.DataFra
         New dataframe with a rows of small missing data features removed.
     """
     nulls_percent = df.isna().sum() / len(df)
-    small_missing_values_features = [feature for feature in features if 0 < nulls_percent[feature] < MISSINGNESS_PCT]
+    small_missing_values_features = [feature for feature in features if 0 < nulls_percent[feature] <
+                                     PreprocessUtilsConsts.MISSINGNESS_PCT]
     for feature in small_missing_values_features:
         df = df[df[feature].notnull()]
     return df

@@ -17,17 +17,15 @@ from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
 from sklearn.linear_model import LogisticRegression, RidgeClassifier, SGDClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, BaggingClassifier
 from sklearn.naive_bayes import BernoulliNB
-from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 from xgboost import XGBClassifier
 
-import src.consts as consts
+from src.consts import TrainTestData, ModelsPerformances
 from src.dataprep.Preprocess import Preprocess
 
 
 class ModelTitanic:
     classifiers = {  # classifiers to examine for model selection
-        # "LGBMClassifier": LGBMClassifier(),
         "LogisticRegression": LogisticRegression(),
         "DummyClassifier": DummyClassifier(strategy='most_frequent'),
         "XGBClassifier": XGBClassifier(use_label_encoder=False, eval_metric='logloss', objective='binary:logistic'),
@@ -89,7 +87,7 @@ class ModelTitanic:
         Returns:
             Pipeline: Pipeline steps.
         """
-        if train and os.path.exists(consts.TRAIN_PREPROCESSED_PATH):  # used for model selection
+        if train and os.path.exists(TrainTestData.TRAIN_PREPROCESSED_PATH):  # used for model selection
             assert model is not None, 'model shouldn\'t be None for model selection run'
             # function used for model selection during train
             pipeline = Pipeline(steps=[('model', model)])
@@ -140,7 +138,7 @@ class ModelTitanic:
             cv_roc_auc = cross_val_score(pipeline, X, y, cv=5, scoring='roc_auc')
             if cv_f1.mean() > max_pipeline_score:
                 max_pipeline_score = cv_f1.mean()
-                joblib.dump(pipeline, consts.SELECTED_MODEL_PIPE_PATH)
+                joblib.dump(pipeline, ModelsPerformances.SELECTED_MODEL_PIPE_PATH)
 
             # dd/mm/YY H:M:S
             now = datetime.now()
@@ -158,7 +156,7 @@ class ModelTitanic:
             df_models_performances = df_models_performances.append(row, ignore_index=True)
 
         df_models_performances = df_models_performances.sort_values(by='f1', ascending=False, ignore_index=True)
-        df_models_performances.to_csv(consts.MODELS_PERFORMANCES_PATH)
+        df_models_performances.to_csv(ModelsPerformances.MODELS_PERFORMANCES_PATH)
         return df_models_performances
 
     def perform_model_selection(self, ):
@@ -167,22 +165,21 @@ class ModelTitanic:
         all models (and actually not necessary for catboost/lightgbm model). Saves results in a csv file.
         """
         # creating preprocessed train dataset
-        if not os.path.exists(consts.TRAIN_PREPROCESSED_PATH):
+        if not os.path.exists(TrainTestData.TRAIN_PREPROCESSED_PATH):
             print('Preprocessing train...')
             preprocess_pipeline = self.get_pipeline(train=True)
             self._X_train = preprocess_pipeline.fit_transform(self._X_train, self._y_train)
             # saving preprocessed train
-            self._X_train.to_csv(consts.TRAIN_PREPROCESSED_PATH)
+            self._X_train.to_csv(TrainTestData.TRAIN_PREPROCESSED_PATH)
         else:
             print('Loading preprocessed train...')
-            self._X_train = pd.read_csv(consts.TRAIN_PREPROCESSED_PATH)
+            self._X_train = pd.read_csv(TrainTestData.TRAIN_PREPROCESSED_PATH)
 
         # model selection if not performed
-        if not os.path.exists(consts.SELECTED_MODEL_PIPE_PATH):
+        if not os.path.exists(ModelsPerformances.SELECTED_MODEL_PIPE_PATH):
             print('Performing Model Selection...')
             df_models_performances = self.select_model(self._X_train, self._y_train)
             print(df_models_performances)
 
     def train_ridge_classifier(self):
-
         pass
