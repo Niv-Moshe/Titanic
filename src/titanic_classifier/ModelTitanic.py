@@ -17,6 +17,7 @@ from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
 from sklearn.linear_model import LogisticRegression, RidgeClassifier, SGDClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, BaggingClassifier
 from sklearn.naive_bayes import BernoulliNB
+from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 from xgboost import XGBClassifier
 
@@ -26,6 +27,8 @@ from src.dataprep.Preprocess import Preprocess
 
 class ModelTitanic:
     classifiers = {  # classifiers to examine for model selection
+        # "LGBMClassifier": LGBMClassifier(),
+        "LogisticRegression": LogisticRegression(),
         "DummyClassifier": DummyClassifier(strategy='most_frequent'),
         "XGBClassifier": XGBClassifier(use_label_encoder=False, eval_metric='logloss', objective='binary:logistic'),
         "RandomForestClassifier": RandomForestClassifier(),
@@ -42,36 +45,49 @@ class ModelTitanic:
         "CatBoostClassifier": CatBoostClassifier(silent=True),
     }
 
-    def __init__(self, df_train: pd.DataFrame = None):
+    def __init__(self, df_train: pd.DataFrame = None, label_encode: bool = True, one_hot_encode: bool = True):
         """
         Will make a model pipeline with preprocees step, model step etc.
+
         Args:
             df_train: titanic dataframe kind data with columns:
             ['PassengerId', 'Survived', 'Pclass', 'Name', 'Sex', 'Age',
-            'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked']
+            'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked'].
+            label_encode: flag for performing label encoding (not necessary for lightgbm and catboost).
+            one_hot_encode: flag for performing one hot encoding (not necessary for lightgbm and catboost).
         """
         assert df_train is not None, 'train dataframe shouldn\'t be None for ModelTitanic class'
-        self.df_train = df_train
-        self.preprocess = Preprocess(df_train=self.df_train)
-        self.df_train = self.preprocess.df_train
-        self.survived = self.df_train['Survived']  # target variable
-        self.features = list(self.df_train.columns)
-        self.pipeline = Pipeline(steps=[], verbose=True)
+        self._df_train = df_train
+        self.preprocess = Preprocess(df_train=self._df_train, label_encode=label_encode, one_hot_encode=one_hot_encode)
+        self._X_train = self.preprocess.df_train  # without dropping Survived
+        self._y_train = self._X_train['Survived']  # target variable
+        self._X_train = self._X_train.drop(columns=['Survived'], axis=1)
+        self.features = list(self._X_train.columns)
+        self.pipeline = Pipeline(steps=[], verbose=True)  # pipeline to be performed on test also
+
+    @property
+    def X_train(self):
+        return self._X_train
+
+    @property
+    def y_train(self):
+        return self._y_train
 
     def get_pipeline(self, model=None, model_name: str = 'model', train: bool = False) -> Pipeline:
         """
         Return a pipeline to preprocess data and bundle with a model.
         When used for model selection we don't need to perform preprocess and feature selection everytime so
         pipeline will be just the model.
+
         Args:
             model: scikit-learn instantiated model object, e.g. XGBClassifier (or scikit-learn model compatible
-            e.g. xgboost library)
-            model_name: model name to be in the pipeline
+            e.g. xgboost library).
+            model_name: model name to be in the pipeline.
             train: if used for model selection then we don't need to perform feature selection everytime as it is the
-            same regardless of what model is being used to classify
+            same regardless of what model is being used to classify.
 
         Returns:
-            Pipeline (object): Pipeline steps.
+            Pipeline: Pipeline steps.
         """
         if train and os.path.exists(consts.TRAIN_PREPROCESSED_PATH):  # used for model selection
             assert model is not None, 'model shouldn\'t be None for model selection run'
@@ -99,9 +115,11 @@ class ModelTitanic:
         return pipeline
 
     def select_model(self, X: pd.DataFrame, y: pd.DataFrame) -> pd.DataFrame:
-        """Test a variety of classifiers and return their performance metrics on training data.
-            modified code from
-            https://practicaldatascience.co.uk/machine-learning/how-to-create-a-contractual-churn-model
+        """
+        Test a variety of classifiers and return their performance metrics on training data.
+        modified code from:
+        https://practicaldatascience.co.uk/machine-learning/how-to-create-a-contractual-churn-model.
+
         Args:
             X: Pandas dataframe containing X_train data.
             y: Pandas dataframe containing y_train data.
@@ -113,14 +131,15 @@ class ModelTitanic:
 
         # df of model performance
         df_models_performances = pd.DataFrame(columns=['model', 'time_executed', 'run_time_sec',
-                                                       'roc_auc', 'score_std'])
+                                                       'f1', 'f1_std', 'roc_auc', 'roc_auc_std'])
 
         for key in tqdm(self.classifiers):
             start_time = time.time()
             pipeline = self.get_pipeline(model=self.classifiers[key], model_name=key, train=True)
-            cv = cross_val_score(pipeline, X, y, cv=5, scoring='roc_auc')
-            if cv.mean() > max_pipeline_score:
-                max_pipeline_score = cv.mean()
+            cv_f1 = cross_val_score(pipeline, X, y, cv=5, scoring='f1')
+            cv_roc_auc = cross_val_score(pipeline, X, y, cv=5, scoring='roc_auc')
+            if cv_f1.mean() > max_pipeline_score:
+                max_pipeline_score = cv_f1.mean()
                 joblib.dump(pipeline, consts.SELECTED_MODEL_PIPE_PATH)
 
             # dd/mm/YY H:M:S
@@ -130,30 +149,40 @@ class ModelTitanic:
             row = {'model': key,
                    'time_executed': dt_string,
                    'run_time_sec': format(round((time.time() - start_time), 2)),
-                   'roc_auc': cv.mean(),
-                   'score_std': cv.std(),
+                   'f1': cv_f1.mean(),
+                   'f1_std': cv_f1.std(),
+                   'roc_auc': cv_roc_auc.mean(),
+                   'roc_auc_std': cv_roc_auc.std(),
                    }
 
             df_models_performances = df_models_performances.append(row, ignore_index=True)
 
-        df_models_performances = df_models_performances.sort_values(by='roc_auc', ascending=False, ignore_index=True)
+        df_models_performances = df_models_performances.sort_values(by='f1', ascending=False, ignore_index=True)
         df_models_performances.to_csv(consts.MODELS_PERFORMANCES_PATH)
         return df_models_performances
 
-    def train(self, ):
+    def perform_model_selection(self, ):
+        """
+        Perform model selection, first creating the preprocessed train dataframe once at max as it is the same for
+        all models (and actually not necessary for catboost/lightgbm model). Saves results in a csv file.
+        """
         # creating preprocessed train dataset
         if not os.path.exists(consts.TRAIN_PREPROCESSED_PATH):
             print('Preprocessing train...')
             preprocess_pipeline = self.get_pipeline(train=True)
-            self.df_train = preprocess_pipeline.fit_transform(self.df_train, self.survived)
+            self._X_train = preprocess_pipeline.fit_transform(self._X_train, self._y_train)
             # saving preprocessed train
-            self.df_train.to_csv(consts.TRAIN_PREPROCESSED_PATH)
+            self._X_train.to_csv(consts.TRAIN_PREPROCESSED_PATH)
         else:
             print('Loading preprocessed train...')
-            self.df_train = pd.read_csv(consts.TRAIN_PREPROCESSED_PATH)
+            self._X_train = pd.read_csv(consts.TRAIN_PREPROCESSED_PATH)
 
         # model selection if not performed
         if not os.path.exists(consts.SELECTED_MODEL_PIPE_PATH):
             print('Performing Model Selection...')
-            df_models_performances = self.select_model(self.df_train, self.survived)
+            df_models_performances = self.select_model(self._X_train, self._y_train)
             print(df_models_performances)
+
+    def train_ridge_classifier(self):
+
+        pass
