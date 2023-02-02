@@ -7,12 +7,12 @@
 /dataSources/
 /dataSources.local.xml
 
-/.idea
-/.ipynb_checkpoints
-/__pycache__
-/catboost_info
-/data/train_preprocessed.csv
-/results
-/src/__pycache__
-/src/dataprep/__pycache__
-/src/titanic_classifier/__pycache__
+.idea
+.ipynb_checkpoints
+__pycache__
+catboost_info
+data/train_preprocessed.csv
+results
+src/__pycache__
+src/dataprep/__pycache__
+src/titanic_classifier/__pycache__
