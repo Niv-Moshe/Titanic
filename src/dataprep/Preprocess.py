@@ -4,6 +4,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 from feature_engine.selection import DropFeatures
+
 import src.dataprep.preprocess_utils as preprocess_utils
 from src.dataprep.FixNamesTransformer import FixNamesTransformer
 warnings.filterwarnings("ignore")
@@ -27,11 +28,11 @@ class Preprocess:
         self.make_preprocess_pipeline()
 
     @property
-    def df_train(self):
+    def df_train(self) -> pd.DataFrame:
         return self._df_train
 
     @property
-    def preprocess_pipeline(self):
+    def preprocess_pipeline(self) -> Pipeline:
         return self._preprocess_pipeline
 
     def feature_engineering(self) -> ColumnTransformer:
@@ -43,24 +44,14 @@ class Preprocess:
         # after that we are with columns that have more than a few missing values
         self._df_train = preprocess_utils.drop_small_missing_data(self._df_train, features_with_missingness)
 
-        feature_engineering_transformer = ColumnTransformer(remainder='passthrough', transformers=[
-            ('honorifics_feature_from_name', FunctionTransformer(preprocess_utils.honorifics_feature_from_name,
-                                                                 validate=False),
-             ['Name']),
-            ('solo_feature_from_parch_sibsp', FunctionTransformer(preprocess_utils.solo_feature_from_parch_sibsp,
-                                                                  validate=False),
-             ['Parch', 'SibSp']),
-            ('CabinChar_feature_from_cabin', FunctionTransformer(preprocess_utils.cabin_char_feature_from_cabin,
-                                                                 validate=False),
-             ['Cabin']),
-            ('TicketGroup_GroupSize_features_from_ticket',
-             FunctionTransformer(preprocess_utils.ticket_group_and_group_size_features_from_ticket, validate=False),
-             ['Ticket']),
-            ('feature_index_for_missing_data', FunctionTransformer(preprocess_utils.feature_index_for_missing_data,
-                                                                   kw_args={'features': features_with_missingness},
-                                                                   validate=False),
-             features_with_missingness),
-        ])
+        transformers = [
+            preprocess_utils.honorifics_function_transformer(['Name']),
+            preprocess_utils.solo_function_transformer(['Parch', 'SibSp']),
+            preprocess_utils.cabin_char_function_transformer(['Cabin']),
+            preprocess_utils.ticket_group_and_group_size_function_transformer(['Ticket']),
+            preprocess_utils.feature_index_for_missing_data_function_transformer(features_with_missingness)
+        ]
+        feature_engineering_transformer = ColumnTransformer(remainder='passthrough', transformers=transformers)
         return feature_engineering_transformer
 
     def make_preprocess_pipeline(self):
@@ -83,10 +74,11 @@ class Preprocess:
                                                              ])])
 
         # preprocessing the data: label encoding, one hot encoding and imputing
-        transformers = [preprocess_utils.label_encoding_transformer(['Sex']),
-                        preprocess_utils.one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"]),
-                        preprocess_utils.numeric_imputing_transformer(["Age"])
-                        ]
+        transformers = [
+            preprocess_utils.label_encoding_transformer(['Sex']),
+            preprocess_utils.one_hot_encoding_transformer(["Embarked", "Honorifics", "CabinChar"]),
+            preprocess_utils.numeric_imputing_transformer(["Age"])
+        ]
         self._preprocess_pipeline.steps.append(['preprocess',
                                                 ColumnTransformer(transformers=transformers, remainder='passthrough')])
         self._preprocess_pipeline.steps.append(['fix_names_after_preprocess', FixNamesTransformer()])
