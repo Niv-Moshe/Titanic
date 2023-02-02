@@ -45,8 +45,6 @@ def feature_index_for_missing_data(df: pd.DataFrame, features: List[str]) -> pd.
     nulls_count = df.isna().sum()
     for feature in features:
         if nulls_count[feature] >= 1:
-            if feature == 'Survived':  # wouldn't happen (full data on independent variable)
-                continue
             missing_feature_name = f"{feature}NaN"
             df[missing_feature_name] = np.where(df[feature].isnull(), 1, 0)
     return df
