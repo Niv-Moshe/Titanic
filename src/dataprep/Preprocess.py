@@ -6,7 +6,6 @@ from sklearn.preprocessing import FunctionTransformer
 from feature_engine.selection import DropFeatures
 
 import src.dataprep.preprocess_utils as preprocess_utils
-from src.dataprep.FixNamesTransformer import FixNamesTransformer
 warnings.filterwarnings("ignore")
 
 
