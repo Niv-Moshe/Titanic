@@ -1,3 +1,6 @@
+from typing import List
+
+
 class TrainTestData:
     # data paths
     TITANIC_PATH: str = 'C:/Users/nivm2/PycharmProjects/Titanic/data/titanic.csv'
@@ -17,3 +20,7 @@ class ModelsPerformances:
 
 class PreprocessUtilsConsts:
     MISSINGNESS_PCT: float = 0.005
+    HONORIFICS_LIST: List[str] = [
+        "Mrs", "Mr", "Ms", "Miss", "Master", "Don", "Rev", "Mme", "Major", "Mlle", "Col", "Capt", "Jonkheer",
+        "Countess", "Dr",
+    ]

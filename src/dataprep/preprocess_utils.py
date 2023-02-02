@@ -60,7 +60,9 @@ def find_honorifics(name: str) -> str:
     Returns:
         Honorifics title string.
     """
-    honorific_names = r'(?:Mrs|Mr|Ms|Miss|Master|Don|Rev|Mme|Major|Mlle|Col|Capt|Jonkheer|Countess|Dr)\.?'
+    honorifics_list = PreprocessUtilsConsts.HONORIFICS_LIST
+    honorifics_for_regex = "|".join(honorifics_list)
+    honorific_names = rf'(?:{honorifics_for_regex})\.?'
     honorific = re.findall(honorific_names, name)
     if not honorific:  # empty list - no honorific found
         return 'non_honorific'
