@@ -19,6 +19,7 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, Bagging
 from sklearn.naive_bayes import BernoulliNB
 from catboost import CatBoostClassifier
 from xgboost import XGBClassifier
+
 import src.consts as consts
 from src.dataprep.Preprocess import Preprocess
 
@@ -102,11 +103,11 @@ class ModelTitanic:
             modified code from
             https://practicaldatascience.co.uk/machine-learning/how-to-create-a-contractual-churn-model
         Args:
-            X (object): Pandas dataframe containing X_train data.
-            y (object): Pandas dataframe containing y_train data.
+            X: Pandas dataframe containing X_train data.
+            y: Pandas dataframe containing y_train data.
 
         Return:
-            df (object): Pandas dataframe containing model performance data.
+            df: Pandas dataframe containing model performance data.
         """
         max_pipeline_score = 0
 
